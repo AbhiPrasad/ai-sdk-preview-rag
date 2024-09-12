@@ -11,6 +11,10 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await streamText({
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "chat",
+    },
     model: openai("gpt-4o"),
     messages: convertToCoreMessages(messages),
     system: `You are a helpful assistant acting as the users' second brain.
@@ -47,12 +51,12 @@ export async function POST(req: Request) {
         execute: async ({ similarQuestions }) => {
           const results = await Promise.all(
             similarQuestions.map(
-              async (question) => await findRelevantContent(question),
-            ),
+              async (question) => await findRelevantContent(question)
+            )
           );
           // Flatten the array of arrays and remove duplicates based on 'name'
           const uniqueResults = Array.from(
-            new Map(results.flat().map((item) => [item?.name, item])).values(),
+            new Map(results.flat().map((item) => [item?.name, item])).values()
           );
           return uniqueResults;
         },
@@ -64,11 +68,15 @@ export async function POST(req: Request) {
           toolsToCallInOrder: z
             .array(z.string())
             .describe(
-              "these are the tools you need to call in the order necessary to respond to the users query",
+              "these are the tools you need to call in the order necessary to respond to the users query"
             ),
         }),
         execute: async ({ query }) => {
           const { object } = await generateObject({
+            experimental_telemetry: {
+              isEnabled: true,
+              functionId: "generate_similar_questions",
+            },
             model: openai("gpt-4o"),
             system:
               "You are a query understanding assistant. Analyze the user query and generate similar questions.",

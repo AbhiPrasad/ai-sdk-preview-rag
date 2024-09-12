@@ -14,10 +14,14 @@ const generateChunks = (input: string): string[] => {
 };
 
 export const generateEmbeddings = async (
-  value: string,
+  value: string
 ): Promise<Array<{ embedding: number[]; content: string }>> => {
   const chunks = generateChunks(value);
   const { embeddings } = await embedMany({
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "generateEmbeddings",
+    },
     model: embeddingModel,
     values: chunks,
   });
@@ -27,6 +31,10 @@ export const generateEmbeddings = async (
 export const generateEmbedding = async (value: string): Promise<number[]> => {
   const input = value.replaceAll("\n", " ");
   const { embedding } = await embed({
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "generateEmbedding",
+    },
     model: embeddingModel,
     value: input,
   });
@@ -35,7 +43,10 @@ export const generateEmbedding = async (value: string): Promise<number[]> => {
 
 export const findRelevantContent = async (userQuery: string) => {
   const userQueryEmbedded = await generateEmbedding(userQuery);
-  const similarity = sql<number>`1 - (${cosineDistance(embeddings.embedding, userQueryEmbedded)})`;
+  const similarity = sql<number>`1 - (${cosineDistance(
+    embeddings.embedding,
+    userQueryEmbedded
+  )})`;
   const similarGuides = await db
     .select({ name: embeddings.content, similarity })
     .from(embeddings)
